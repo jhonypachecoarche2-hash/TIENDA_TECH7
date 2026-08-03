@@ -1,0 +1,512 @@
+<?php
+// ==============================================================================
+// BASE DE DATOS Y CONEXIÓN AUTOMÁTICA CON CATÁLOGO MASIVO
+// ==============================================================================
+mysqli_report(MYSQLI_REPORT_OFF);
+
+$host = "127.0.0.1";
+$user = "root";
+$password = "";
+$database = "tienda_tech7";
+
+$conexion = @new mysqli($host, $user, $password, "", 3306);
+if ($conexion->connect_error) {
+    $conexion = @new mysqli($host, $user, $password, "", 3308);
+}
+
+if ($conexion && !$conexion->connect_error) {
+    $conexion->query("CREATE DATABASE IF NOT EXISTS $database");
+    $conexion->select_db($database);
+
+    // Se reinicia la tabla para actualizar las imágenes correctamente
+    $conexion->query("DROP TABLE IF EXISTS productos");
+    $conexion->query("CREATE TABLE productos (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nombre VARCHAR(150) NOT NULL,
+        marca VARCHAR(50),
+        categoria VARCHAR(50),
+        precio DECIMAL(10, 2) NOT NULL,
+        precio_anterior DECIMAL(10, 2),
+        descuento VARCHAR(10),
+        imagen TEXT NOT NULL
+    )");
+
+    $conexion->query("CREATE TABLE IF NOT EXISTS compras (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        cliente_nombre VARCHAR(100) NOT NULL,
+        cliente_dni VARCHAR(20) NOT NULL,
+        cliente_telefono VARCHAR(20),
+        producto_nombre VARCHAR(150) NOT NULL,
+        precio DECIMAL(10, 2) NOT NULL,
+        direccion_envio TEXT,
+        fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    // ==============================================================================
+    // INSERCIÓN MASIVA DE PRODUCTOS (TODOS CON IMÁGENES FUNCIONALES)
+    // ==============================================================================
+    $productos_raw = [
+        // --- SECCIÓN: COMPUTADORAS Y PCS GAMER ---
+        ['Cpu Gamer Ryzen 5 5600g, Ram 16gb, Ssd 500gb, Radeon Vega 7', 'AMD', 'PC Gamer', 1748.00, 2300.00, '-24%', 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=500'],
+        ['PC Gamer Ryzen 5 5600G 16GB RAM SSD 512GB Monitor 24"', 'AMD', 'PC Gamer', 2189.00, 2800.00, '-21%', 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=500'],
+        ['Cpu Gamer Ryzen 5 5600g THOR RYZER, 16gb Ram, Ssd 500gb', 'AMD', 'PC Gamer', 1706.00, 2100.00, '-18%', 'https://images.unsplash.com/photo-1587202372616-b43abea06c2a?w=500'],
+        ['PC Gamer Ryzen 7 5700X, RTX 4060 8GB, 32GB RAM, SSD 1TB', 'AMD', 'PC Gamer', 4299.00, 4999.00, '-14%', 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=500'],
+        ['PC Gamer Intel Core i5 13400F, RTX 3060 12GB, 16GB RAM', 'Intel', 'PC Gamer', 3599.00, 4100.00, '-12%', 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=500'],
+        ['PC Gamer Core i7 13700KF, RTX 4070 Ti 12GB, 32GB DDR5', 'Intel', 'PC Gamer', 7899.00, 8999.00, '-12%', 'https://images.unsplash.com/photo-1587202372616-b43abea06c2a?w=500'],
+        ['PC Gamer Ryzen 9 7900X, RTX 4080 Super 16GB, 32GB DDR5', 'AMD', 'PC Gamer', 9599.00, 10999.00, '-13%', 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=500'],
+        ['PC Streamer Ryzen 5 4600G, 16GB RAM, SSD 480GB RGB', 'AMD', 'PC Gamer', 1499.00, 1899.00, '-21%', 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=500'],
+        ['PC Oficina Intel Core i3 12100, 8GB RAM, SSD 256GB', 'Intel', 'PC Gamer', 1199.00, 1499.00, '-20%', 'https://images.unsplash.com/photo-1587202372616-b43abea06c2a?w=500'],
+        ['PC Gamer Extreme Ryzen 7 7800X3D, RTX 4090 24GB', 'AMD', 'PC Gamer', 13999.00, 15999.00, '-12%', 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=500'],
+
+        // --- SECCIÓN: LAPTOPS ---
+        ['Laptop Gamer ASUS TUF Gaming F15 Core i5 16GB SSD 512GB', 'ASUS', 'Laptops', 3299.00, 3899.00, '-15%', 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=500'],
+        ['Laptop Lenovo Legion 5 AMD Ryzen 7 16GB RTX 4050 1TB', 'Lenovo', 'Laptops', 4599.00, 5299.00, '-13%', 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=500'],
+        ['Laptop Gamer MSI Thin GF63 Core i7 RTX 3050 16GB', 'MSI', 'Laptops', 3499.00, 4199.00, '-17%', 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500'],
+        ['Laptop Acer Nitro 5 Ryzen 5 5600H RTX 3050 8GB SSD', 'Acer', 'Laptops', 2899.00, 3499.00, '-17%', 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=500'],
+        ['Laptop HP Victus 15 Core i5 RTX 2050 16GB SSD 512GB', 'HP', 'Laptops', 2699.00, 3199.00, '-16%', 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=500'],
+        ['Laptop ROG Zephyrus G16 Intel i9 RTX 4070 32GB OLED', 'ASUS', 'Laptops', 8999.00, 9999.00, '-10%', 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=500'],
+
+        // --- SECCIÓN: MONITORES ---
+        ['Monitor Gamer LG UltraGear 24" IPS 144Hz 1ms Full HD', 'LG', 'Monitores', 699.00, 899.00, '-22%', 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500'],
+        ['Monitor Gamer Samsung Odyssey G4 27" IPS 240Hz 1ms', 'Samsung', 'Monitores', 1199.00, 1499.00, '-20%', 'https://images.unsplash.com/photo-1551645120-d70bfe84c826?w=500'],
+        ['Monitor Curvo ASUS TUF Gaming 31.5" 165Hz QHD 2K', 'ASUS', 'Monitores', 1599.00, 1899.00, '-15%', 'https://images.unsplash.com/photo-1547082299-de196ea013d6?w=500'],
+        ['Monitor Gamer ViewSonic 24" 165Hz 1ms AMD FreeSync', 'ViewSonic', 'Monitores', 599.00, 749.00, '-20%', 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500'],
+        ['Monitor BenQ ZOWIE XL2411K 24" 144Hz para Esports', 'BenQ', 'Monitores', 899.00, 1099.00, '-18%', 'https://images.unsplash.com/photo-1551645120-d70bfe84c826?w=500'],
+        ['Monitor Gigabyte M27Q 27" IPS 170Hz KVM 0.5ms 2K', 'Gigabyte', 'Monitores', 1399.00, 1699.00, '-18%', 'https://images.unsplash.com/photo-1547082299-de196ea013d6?w=500'],
+
+        // --- SECCIÓN: PERIFÉRICOS ---
+        ['Teclado Mecánico RGB Redragon Kumara K552 Switch Red', 'Redragon', 'Perifericos', 149.90, 219.00, '-31%', 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500'],
+        ['Mouse Gamer Logitech G203 Lightsync RGB 8000 DPI', 'Logitech', 'Perifericos', 89.90, 129.00, '-30%', 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=500'],
+        ['Audífonos Gamer HyperX Cloud II Red Surround 7.1', 'HyperX', 'Perifericos', 299.00, 399.00, '-25%', 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=500'],
+        ['Mouse Gamer Razer DeathAdder Essential 6400 DPI', 'Razer', 'Perifericos', 99.00, 149.00, '-33%', 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500'],
+        ['Pad Mouse Gamer XL RGB 80x30cm Antideslizante', 'COOLBOX', 'Perifericos', 49.90, 79.90, '-37%', 'https://images.unsplash.com/photo-1629429408209-1f912961dbd8?w=500'],
+        ['Teclado Inalámbrico Logitech G Pro X TKL Lightspeed', 'Logitech', 'Perifericos', 699.00, 849.00, '-18%', 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500'],
+        ['Mouse Gamer Logitech G Pro X Superlight Wireless 63g', 'Logitech', 'Perifericos', 499.00, 629.00, '-21%', 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=500'],
+        ['Audífonos Razer BlackShark V2 X Sonido 7.1 Jack 3.5', 'Razer', 'Perifericos', 199.00, 269.00, '-26%', 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=500'],
+        ['Micrófono Condensador HyperX QuadCast S RGB USB', 'HyperX', 'Perifericos', 549.00, 699.00, '-21%', 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500'],
+        ['Camara Web Logitech C920 Pro Full HD 1080p', 'Logitech', 'Perifericos', 279.00, 359.00, '-22%', 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500'],
+
+        // --- SECCIÓN: COMPONENTES DE PC ---
+        ['Tarjeta de Video MSI NVIDIA RTX 4060 Ventus 2X 8GB', 'MSI', 'Componentes', 1499.00, 1799.00, '-16%', 'https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=500'],
+        ['Memoria RAM Kingston Fury Beast 16GB DDR4 3200MHz', 'Kingston', 'Componentes', 189.00, 249.00, '-24%', 'https://images.unsplash.com/photo-1562976540-1502c2145186?w=500'],
+        ['Disco Sólido SSD NVMe Kingston NV2 1TB PCIe 4.0', 'Kingston', 'Componentes', 259.00, 329.00, '-21%', 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=500'],
+        ['Procesador AMD Ryzen 7 5700X3D 8 Cores 16 Threads', 'AMD', 'Componentes', 989.00, 1199.00, '-18%', 'https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=500'],
+        ['Procesador Intel Core i5 14600K 14 Cores LGA1700', 'Intel', 'Componentes', 1349.00, 1599.00, '-16%', 'https://images.unsplash.com/photo-1562976540-1502c2145186?w=500'],
+        ['Placa Madre ASUS TUF Gaming B550M-PLUS WiFi II', 'ASUS', 'Componentes', 649.00, 799.00, '-19%', 'https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=500'],
+        ['Fuente de Poder Corsair RM750e 750W 80 Plus Gold', 'Corsair', 'Componentes', 479.00, 599.00, '-20%', 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=500'],
+        ['Refrigeración Líquida MSI MAG CoreLiquid C240 RGB', 'MSI', 'Componentes', 389.00, 489.00, '-20%', 'https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=500'],
+
+        // --- SECCIÓN: ACCESORIOS Y CASES ---
+        ['Case Samsung Galaxy Z Flip 7 Onyx Negro, PC y TPU', 'RINGKE', 'Accesorios', 49.90, 89.90, '-44%', 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=500'],
+        ['Case Samsung Galaxy Z Fold 7 Fusion Transparent', 'RINGKE', 'Accesorios', 49.90, 89.90, '-44%', 'https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=500'],
+        ['Case Coolbox GMobile para Samsung S24 Ultra Solid 360', 'COOLBOX', 'Accesorios', 29.90, 79.90, '-63%', 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500'],
+        ['Silla Gamer Cougar Armor Titan Pro Black Edition', 'Cougar', 'Accesorios', 1299.00, 1599.00, '-19%', 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=500'],
+        ['Silla Gamer ThunderX3 TC3 Ergonomica Reclinable', 'ThunderX3', 'Accesorios', 699.00, 899.00, '-22%', 'https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=500'],
+        ['Soporte de Monitor Doble Brazo Articulado con Gas', 'COOLBOX', 'Accesorios', 159.00, 229.00, '-31%', 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=500'],
+        ['Hub USB-C 7 en 1 HDMI 4K USB 3.0 Lector SD', 'COOLBOX', 'Accesorios', 119.00, 169.00, '-30%', 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=500']
+    ];
+
+    $stmt_ins = $conexion->prepare("INSERT INTO productos (nombre, marca, categoria, precio, precio_anterior, descuento, imagen) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    foreach ($productos_raw as $prod) {
+        $stmt_ins->bind_param("sssdsss", $prod[0], $prod[1], $prod[2], $prod[3], $prod[4], $prod[5], $prod[6]);
+        $stmt_ins->execute();
+    }
+    $stmt_ins->close();
+}
+
+$mensaje_exito = "";
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cliente_nombre'])) {
+    $nombre    = $_POST['cliente_nombre'] ?? '';
+    $dni       = $_POST['cliente_dni'] ?? '';
+    $telefono  = $_POST['cliente_telefono'] ?? '';
+    $producto  = $_POST['producto_nombre'] ?? '';
+    $precio    = $_POST['precio'] ?? 0;
+    $direccion = $_POST['direccion_envio'] ?? '';
+
+    if ($conexion && !empty($nombre) && !empty($dni) && !empty($producto)) {
+        $stmt = $conexion->prepare("INSERT INTO compras (cliente_nombre, cliente_dni, cliente_telefono, producto_nombre, precio, direccion_envio) VALUES (?, ?, ?, ?, ?, ?)");
+        if ($stmt) {
+            $stmt->bind_param("ssssds", $nombre, $dni, $telefono, $producto, $precio, $direccion);
+            if ($stmt->execute()) {
+                $mensaje_exito = "¡PEDIDO REGISTRADO EXITOSAMENTE EN TIENDA_TECH7! Gracias por tu compra, $nombre.";
+            }
+            $stmt->close();
+        }
+    }
+}
+
+$productos = [];
+if ($conexion) {
+    $res = $conexion->query("SELECT * FROM productos");
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            $productos[] = $row;
+        }
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIENDA_TECH7 | Megastore de Tecnología & Gaming</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+
+    <style>
+        body { background-color: #f4f5f7; font-family: 'Roboto', sans-serif; color: #333; }
+        .promo-bar { background: #000; color: #fff; font-size: 0.8rem; padding: 6px 0; text-align: center; font-weight: 700; letter-spacing: 1px; }
+        .top-bar { background: #ffffff; border-bottom: 3px solid #e30613; padding: 14px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .brand-logo { font-size: 1.9rem; font-weight: 900; color: #e30613; text-decoration: none; letter-spacing: -1px; display: flex; align-items: center; gap: 8px; }
+        .brand-logo i { font-size: 2.2rem; transform: rotate(-10deg); }
+        .search-input { border-radius: 25px; border: 2px solid #e0e0e0; padding: 10px 20px; transition: all 0.3s; }
+        .search-input:focus { border-color: #e30613; box-shadow: 0 0 8px rgba(227, 6, 19, 0.2); }
+
+        .filter-section { background: #fff; border-radius: 12px; padding: 22px; border: 1px solid #e5e5e5; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .filter-title { font-size: 0.95rem; font-weight: 800; margin-bottom: 12px; text-transform: uppercase; color: #111; letter-spacing: 0.5px; }
+
+        .product-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; overflow: hidden; height: 100%; display: flex; flex-direction: column; justify-content: space-between; position: relative; transition: all 0.3s ease; }
+        .product-card:hover { transform: translateY(-6px); box-shadow: 0 12px 25px rgba(0,0,0,0.12); border-color: #e30613; }
+        .badge-discount { position: absolute; top: 12px; right: 12px; background-color: #e30613; color: white; font-weight: 900; font-size: 0.85rem; padding: 4px 10px; border-radius: 6px; z-index: 2; box-shadow: 0 2px 6px rgba(227, 6, 19, 0.4); }
+        .img-container { height: 190px; display: flex; align-items: center; justify-content: center; padding: 15px; background: #fff; overflow: hidden; }
+        .img-container img { max-height: 100%; max-width: 100%; object-fit: contain; transition: transform 0.4s ease; }
+        .product-card:hover .img-container img { transform: scale(1.08); }
+        
+        .badge-pickup { background-color: #ffebe6; color: #e30613; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 8px; }
+        .brand-name { font-size: 0.75rem; font-weight: 800; color: #888; text-transform: uppercase; }
+        .product-name { font-size: 0.9rem; font-weight: 700; color: #222; line-height: 1.35; height: 2.7em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 10px; }
+        .price-old { text-decoration: line-through; color: #999; font-size: 0.85rem; }
+        .price-web { color: #e30613; font-size: 1.35rem; font-weight: 900; }
+
+        .btn-buy-cool { background: linear-gradient(135deg, #e30613, #b8000b); color: white; border: none; border-radius: 8px; padding: 10px; font-weight: 800; font-size: 0.9rem; width: 100%; transition: all 0.2s; box-shadow: 0 4px 10px rgba(227, 6, 19, 0.25); }
+        .btn-buy-cool:hover { opacity: 0.95; transform: scale(1.02); color: white; }
+        .btn-add-cart { background-color: #111; color: white; border: none; border-radius: 8px; padding: 10px; font-weight: 700; font-size: 0.85rem; width: 100%; margin-bottom: 8px; transition: all 0.2s; }
+        .btn-add-cart:hover { background-color: #333; }
+
+        .floating-chat { position: fixed; bottom: 25px; right: 25px; background: linear-gradient(135deg, #25d366, #128c7e); color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 6px 16px rgba(0,0,0,0.3); z-index: 100; text-decoration: none; transition: transform 0.3s; }
+        .floating-chat:hover { transform: scale(1.1) rotate(10deg); color: white; }
+    </style>
+</head>
+
+<body>
+
+    <div class="promo-bar">
+        ⚡ OFERTAS EXCLUSIVAS WEB EN TIENDA_TECH7 - ENVÍOS A TODO EL PERÚ ⚡
+    </div>
+
+    <div class="top-bar">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a href="#" class="brand-logo">
+                <i class="fa-solid fa-bolt"></i> TIENDA_TECH7
+            </a>
+            <div class="w-50 d-none d-md-block">
+                <input type="text" id="inputBuscador" onkeyup="filtrarTodo()" class="form-control search-input" placeholder="🔍 Buscar PCs, monitores, laptops, teclados, tarjetas...">
+            </div>
+            <div class="d-flex gap-3 align-items-center">
+                <button class="btn btn-danger btn-sm rounded-pill fw-bold px-3 py-2 shadow-sm" onclick="abrirCarrito()">
+                    <i class="fa-solid fa-cart-shopping me-1"></i> Carrito (<span id="cartCount">0</span>)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container my-4">
+
+        <?php if (!empty($mensaje_exito)): ?>
+            <div class="alert alert-success alert-dismissible fade show text-center fw-bold mb-4 shadow-sm" role="alert">
+                <i class="fa-solid fa-circle-check me-2 fs-5"></i> <?php echo $mensaje_exito; ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+
+        <div class="row g-4">
+
+            <div class="col-lg-3">
+                <div class="filter-section">
+                    <h5 class="fw-bold mb-3"><i class="fa-solid fa-sliders text-danger me-2"></i>Categorías</h5>
+
+                    <div class="mb-3">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input filtro-categoria" type="checkbox" value="PC Gamer" id="cat1" onchange="filtrarTodo()" checked>
+                            <label class="form-check-label fw-semibold" for="cat1">PCs Gamer</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input filtro-categoria" type="checkbox" value="Laptops" id="cat4" onchange="filtrarTodo()" checked>
+                            <label class="form-check-label fw-semibold" for="cat4">Laptops Gamer</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input filtro-categoria" type="checkbox" value="Monitores" id="cat2" onchange="filtrarTodo()" checked>
+                            <label class="form-check-label fw-semibold" for="cat2">Monitores</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input filtro-categoria" type="checkbox" value="Perifericos" id="cat3" onchange="filtrarTodo()" checked>
+                            <label class="form-check-label fw-semibold" for="cat3">Periféricos Gamer</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input filtro-categoria" type="checkbox" value="Componentes" id="cat5" onchange="filtrarTodo()" checked>
+                            <label class="form-check-label fw-semibold" for="cat5">Componentes PC</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input filtro-categoria" type="checkbox" value="Accesorios" id="cat6" onchange="filtrarTodo()" checked>
+                            <label class="form-check-label fw-semibold" for="cat6">Accesorios & Cases</label>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-sm btn-outline-dark w-100 mt-2 fw-bold" onclick="resetearFiltros()">Mostrar Todo</button>
+                </div>
+            </div>
+
+            <div class="col-lg-9">
+
+                <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-3 rounded-3 border shadow-sm">
+                    <span class="fw-bold text-dark"><span id="totalProductos" class="text-danger fs-5"><?php echo count($productos); ?></span> Productos con Imagen Disponibles</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="small text-muted fw-bold">Ordenar:</span>
+                        <select class="form-select form-select-sm w-auto fw-semibold" id="selectOrden" onchange="ordenarProductos()">
+                            <option value="normal">Recomendados</option>
+                            <option value="menor">Precio: Menor a Mayor</option>
+                            <option value="mayor">Precio: Mayor a Menor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3" id="contenedorProductos">
+                    <?php foreach ($productos as $prod): ?>
+                        <div class="col-sm-6 col-md-4 item-producto" 
+                             data-nombre="<?php echo strtolower(htmlspecialchars($prod['nombre'])); ?>"
+                             data-categoria="<?php echo htmlspecialchars($prod['categoria']); ?>"
+                             data-marca="<?php echo htmlspecialchars($prod['marca']); ?>"
+                             data-precio="<?php echo $prod['precio']; ?>">
+                            
+                            <div class="product-card">
+                                <?php if (!empty($prod['descuento'])): ?>
+                                    <span class="badge-discount"><?php echo $prod['descuento']; ?></span>
+                                <?php endif; ?>
+
+                                <div>
+                                    <div class="img-container">
+                                        <img src="<?php echo htmlspecialchars($prod['imagen']); ?>" alt="<?php echo htmlspecialchars($prod['nombre']); ?>" loading="lazy">
+                                    </div>
+                                    <div class="p-3">
+                                        <span class="badge-pickup"><i class="fa-solid fa-truck-fast me-1"></i> RETIRO / ENVÍO RÁPIDO</span>
+                                        <div class="brand-name"><?php echo htmlspecialchars($prod['marca']); ?></div>
+                                        <h6 class="product-name"><?php echo htmlspecialchars($prod['nombre']); ?></h6>
+
+                                        <div class="mt-2">
+                                            <?php if ($prod['precio_anterior'] > 0): ?>
+                                                <div class="price-old">S/ <?php echo number_format($prod['precio_anterior'], 2); ?></div>
+                                            <?php endif; ?>
+                                            <div class="price-web">S/ <?php echo number_format($prod['precio'], 2); ?></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="p-3 pt-0">
+                                    <button class="btn-add-cart" onclick="agregarAlCarrito('<?php echo htmlspecialchars($prod['nombre']); ?>', '<?php echo $prod['precio']; ?>')">
+                                        <i class="fa-solid fa-cart-plus me-1"></i> Agregar al Carrito
+                                    </button>
+                                    <button class="btn-buy-cool" onclick="abrirCompra('<?php echo htmlspecialchars($prod['nombre']); ?>', '<?php echo $prod['precio']; ?>')">
+                                        Comprar Ahora
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <a href="https://api.whatsapp.com/send?phone=51900000000&text=Hola%20TIENDA_TECH7,%20quiero%20informaci%C3%B3n" target="_blank" class="floating-chat">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+
+    <div class="modal fade" id="modalCompra" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-bottom bg-danger text-white rounded-top-4">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-bag-shopping me-2"></i>Finalizar Pedido Directo</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="index.php" method="POST">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">PRODUCTO SELECCIONADO</label>
+                            <input type="text" class="form-control bg-light fw-bold text-danger border-0" id="modal_producto" name="producto_nombre" readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">TOTAL A PAGAR</label>
+                            <input type="text" class="form-control bg-light fw-bold text-success fs-5 border-0" id="modal_precio_text" readonly>
+                            <input type="hidden" id="modal_precio" name="precio">
+                        </div>
+
+                        <hr class="my-3">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Nombre Completo</label>
+                            <input type="text" class="form-control" name="cliente_nombre" placeholder="Ej. Juan Pérez" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label fw-bold small">DNI</label>
+                                <input type="text" class="form-control" name="cliente_dni" maxlength="8" placeholder="8 dígitos" required>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label fw-bold small">Teléfono / WhatsApp</label>
+                                <input type="text" class="form-control" name="cliente_telefono" placeholder="900000000" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Dirección de Envío</label>
+                            <input type="text" class="form-control" name="direccion_envio" placeholder="Av. Principal 123" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger fw-bold px-4">Confirmar Pedido</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalCarrito" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-cart-shopping me-2 text-danger"></i>Carrito de Compras</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <ul class="list-group mb-3" id="listaCarrito"></ul>
+                    <div class="d-flex justify-content-between fw-bold fs-5">
+                        <span>Total:</span>
+                        <span class="text-danger" id="totalCarritoText">S/ 0.00</span>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary" onclick="vaciarCarrito()">Vaciar</button>
+                    <button type="button" class="btn btn-danger fw-bold" id="btnComprarCarrito" onclick="comprarCarritoProcesar()">Comprar Todo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const modalCompra = new bootstrap.Modal(document.getElementById('modalCompra'));
+        const modalCarrito = new bootstrap.Modal(document.getElementById('modalCarrito'));
+        let carrito = [];
+
+        function abrirCompra(nombre, precio) {
+            document.getElementById('modal_producto').value = nombre;
+            document.getElementById('modal_precio').value = precio;
+            document.getElementById('modal_precio_text').value = 'S/ ' + parseFloat(precio).toFixed(2);
+            modalCompra.show();
+        }
+
+        function agregarAlCarrito(nombre, precio) {
+            carrito.push({ nombre, precio: parseFloat(precio) });
+            document.getElementById('cartCount').innerText = carrito.length;
+        }
+
+        function abrirCarrito() {
+            const lista = document.getElementById('listaCarrito');
+            lista.innerHTML = '';
+            let total = 0;
+
+            if(carrito.length === 0) {
+                lista.innerHTML = '<li class="list-group-item text-center text-muted">El carrito está vacío</li>';
+            } else {
+                carrito.forEach((p) => {
+                    total += p.precio;
+                    lista.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center fw-semibold">
+                        ${p.nombre}
+                        <span class="fw-bold text-danger">S/ ${p.precio.toFixed(2)}</span>
+                    </li>`;
+                });
+            }
+
+            document.getElementById('totalCarritoText').innerText = 'S/ ' + total.toFixed(2);
+            modalCarrito.show();
+        }
+
+        function vaciarCarrito() {
+            carrito = [];
+            document.getElementById('cartCount').innerText = '0';
+            abrirCarrito();
+        }
+
+        function comprarCarritoProcesar() {
+            if(carrito.length === 0) {
+                alert('Añade productos primero.');
+                return;
+            }
+            modalCarrito.hide();
+            const nombres = carrito.map(c => c.nombre).join(' + ');
+            const total = carrito.reduce((sum, c) => sum + c.precio, 0);
+            abrirCompra(nombres, total);
+        }
+
+        function filtrarTodo() {
+            const busqueda = document.getElementById('inputBuscador').value.toLowerCase();
+            const categoriasCheck = Array.from(document.querySelectorAll('.filtro-categoria:checked')).map(c => c.value);
+
+            const productos = document.querySelectorAll('.item-producto');
+            let visibles = 0;
+
+            productos.forEach(p => {
+                const nombre = p.getAttribute('data-nombre');
+                const cat = p.getAttribute('data-categoria');
+
+                const coincideNombre = nombre.includes(busqueda);
+                const coincideCat = categoriasCheck.includes(cat);
+
+                if (coincideNombre && coincideCat) {
+                    p.style.display = 'block';
+                    visibles++;
+                } else {
+                    p.style.display = 'none';
+                }
+            });
+
+            document.getElementById('totalProductos').innerText = visibles;
+        }
+
+        function resetearFiltros() {
+            document.querySelectorAll('.filtro-categoria').forEach(cb => cb.checked = true);
+            document.getElementById('inputBuscador').value = '';
+            filtrarTodo();
+        }
+
+        function ordenarProductos() {
+            const orden = document.getElementById('selectOrden').value;
+            const contenedor = document.getElementById('contenedorProductos');
+            const items = Array.from(contenedor.getElementsByClassName('item-producto'));
+
+            items.sort((a, b) => {
+                const precioA = parseFloat(a.getAttribute('data-precio'));
+                const precioB = parseFloat(b.getAttribute('data-precio'));
+
+                if (orden === 'menor') return precioA - precioB;
+                if (orden === 'mayor') return precioB - precioA;
+                return 0;
+            });
+
+            items.forEach(item => contenedor.appendChild(item));
+        }
+    </script>
+</body>
+</html>
